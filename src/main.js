@@ -1,36 +1,47 @@
-import "./style.css"
+import './style.css'
 import * as THREE from 'three'
-import { OrbitControls } from "three/addons/controls/OrbitControls.js"
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js'
+import * as dat from 'dat.gui'
 
 const scene = new THREE.Scene()
-const cubeGeometry = new THREE.BoxGeometry(1,1,1)
-const material = new THREE.MeshBasicMaterial({color:"red",wireframe:true})
-const coneGeometry = new THREE.ConeGeometry( 5, 20, 32 );
+const gui = new dat.GUI()
+const textureLoader = new THREE.TextureLoader()
+const testTexture = textureLoader.load('/space-cruiser-panels2-bl/space-cruiser-panels2-bl/space-cruiser-panels2_albedo.png')
 
-const coneMesh = new THREE.Mesh(coneGeometry,material)
-coneMesh.scale.set(0.1,0.1,0.1)
-coneMesh.position.x = -1
-const cubeMesh = new THREE.Mesh(cubeGeometry,material)
-cubeMesh.position.x = 1
+const geometry = new THREE.SphereGeometry(0.5,32,32)
+const material = new THREE.MeshStandardMaterial({
+    color:'grey',
+    map:testTexture
+})
+gui.add(material,'metalness',0,1).step(0.01)
+gui.add(material,'roughness',0,1).step(0.01)
+
+const mesh = new THREE.Mesh(geometry,material)
+mesh.scale.set(2,2,2)
 const group = new THREE.Group()
-group.add(coneMesh)
-group.add(cubeMesh)
+group.add(mesh)
 scene.add(group)
 
-const canvas = document.querySelector(".three_canvas")
 const camera = new THREE.PerspectiveCamera(
-    75,
+    55,
     window.innerWidth/window.innerHeight,
     0.1,
     100
 )
 camera.position.z = 5
 
+const ambientLight = new THREE.AmbientLight(0xffffff,0.3)
+scene.add(ambientLight)
+const pointLight = new THREE.PointLight(0xffffff,30)
+pointLight.position.set(0,4,4)
+scene.add(pointLight)
+
+const canvas = document.querySelector('.threejs_canvas')
 const controls = new OrbitControls(camera,canvas)
 controls.enableDamping = true
-controls.autoRotate = true
+controls.autoRotate = false
 
-const renderer = new THREE.WebGLRenderer({canvas:canvas,antialias:true})
+const renderer = new THREE.WebGLRenderer({canvas,antialias:true})
 renderer.setSize(window.innerWidth,window.innerHeight)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
 
@@ -40,17 +51,9 @@ window.addEventListener('resize',()=>{
     renderer.setSize(window.innerWidth,window.innerHeight)
 })
 
-const clock = new THREE.Clock()
-let prevTime = 0
 const renderLoop = ()=>{
-    let currentTime = clock.getElapsedTime()
-    let delta = currentTime-prevTime
-    prevTime=currentTime
-
-
-    coneMesh.rotation.x += THREE.MathUtils.degToRad(1)*delta*50
-    requestAnimationFrame(renderLoop)
     controls.update()
     renderer.render(scene,camera)
+    requestAnimationFrame(renderLoop)
 }
 renderLoop()
